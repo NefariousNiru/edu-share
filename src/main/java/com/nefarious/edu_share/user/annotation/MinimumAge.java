@@ -1,12 +1,13 @@
 package com.nefarious.edu_share.user.annotation;
 
+import com.nefarious.edu_share.user.validator.MinimumAgeValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
 
 @Documented
-@Constraint(validatedBy = MinAgeValidator.class)
+@Constraint(validatedBy = MinimumAgeValidator.class)
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MinimumAge {
