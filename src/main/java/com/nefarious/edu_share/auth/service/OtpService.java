@@ -1,6 +1,6 @@
 package com.nefarious.edu_share.auth.service;
 
-import com.nefarious.edu_share.shared.utils.Constant;
+import com.nefarious.edu_share.shared.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -65,8 +65,8 @@ public class OtpService {
     private String generateOtp() {
         var sb = new StringBuilder(OTP_LENGTH);
         for (int i = 0; i < OTP_LENGTH; i++) {
-            int idx = random.nextInt(Constant.ALPHANUMERIC.length());
-            sb.append(Constant.ALPHANUMERIC.charAt(idx));
+            int idx = random.nextInt(Constants.ALPHANUMERIC.length());
+            sb.append(Constants.ALPHANUMERIC.charAt(idx));
         }
         return sb.toString();
     }

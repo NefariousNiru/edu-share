@@ -1,0 +1,15 @@
+CREATE TABLE users (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email           TEXT    NOT NULL UNIQUE,
+  password        TEXT    NOT NULL,
+  username        TEXT    NOT NULL UNIQUE CHECK (char_length(username) <= 30),
+  first_name      TEXT    NOT NULL CHECK (char_length(first_name) <= 30),
+  last_name       TEXT    NOT NULL CHECK (char_length(last_name) <= 30),
+  date_of_birth   DATE    NOT NULL,
+  is_email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  bio             TEXT    CHECK (char_length(bio) <= 250),
+  profile_image_url TEXT,
+  organization    TEXT    CHECK (char_length(organization) <= 50),
+  school          TEXT    CHECK (char_length(school) <= 50),
+  position        TEXT    CHECK (char_length(position) <= 25)
+);
