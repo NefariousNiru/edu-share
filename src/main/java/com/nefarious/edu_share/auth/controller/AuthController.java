@@ -1,24 +1,90 @@
 package com.nefarious.edu_share.auth.controller;
 
+import com.nefarious.edu_share.auth.dto.*;
 import com.nefarious.edu_share.auth.service.AuthService;
 import com.nefarious.edu_share.auth.util.Endpoint;
+import com.nefarious.edu_share.shared.annotation.RateLimiter;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping(Endpoint.AUTH)
 @RequiredArgsConstructor
 public class AuthController {
-    private AuthService authService;
-//    public class Endpoint {
-//        public static final String AUTH                         = "/auth";
-//        public static final String SIGNUP_V1                    = "/signup";
-//        public static final String SIGNIN_V1                    = "/signin";
-//        public static final String VERIFY_V1                    = "/verify";
-//        public static final String LOGOUT_V1                    = "/logout";
-//        public static final String RESEND_OTP_V1                = "/resend-otp";
-//        public static final String REFRESH_SESSION_V1           = "/refresh";
-//        public static final String FORGOT_PASSWORD_V1           = "/forgot-password";
-//    }
+    private final AuthService authService;
+
+    /**
+     * Handles user signup requests.
+     *
+     * <p>Accepts a JSON payload containing user registration information,
+     * validates it, and delegates user creation to the {@link AuthService}.
+     *
+     * @param signupRequest {@link SignupRequest} the signup request data containing email, password, username, etc.
+     * @return 202 Accepted if signup request is successfully processed
+     */
+    @PostMapping(Endpoint.SIGNUP)
+    public Mono<Void> signup(@Valid @RequestBody SignupRequest signupRequest) {
+        return authService.signup(signupRequest);
+    }
+
+    /**
+     * Handles user signin requests.
+     *
+     * <p>Accepts a JSON payload containing user credentials,
+     * authenticates the user, and returns a session with access and refresh tokens.
+     *
+     * @param signinRequest {@link SigninRequest} containing email and password.
+     * @return 200 OK with {@link TokenPair} containing tokens if authentication succeeds.
+     */
+    @PostMapping(Endpoint.SIGNIN)
+    public Mono<TokenPair> signin(@Valid @RequestBody SigninRequest signinRequest) {
+        return authService.signin(signinRequest);
+    }
+
+    /**
+     * Handles OTP verification requests during signup.
+     *
+     * <p>Accepts a JSON payload with email and OTP code,
+     * verifies the OTP, marks the user's email as verified,
+     * and generates session tokens.
+     *
+     * @param request {@link OtpVerificationRequest} containing email and OTP code.
+     * @return 200 OK with {@link TokenPair} containing access and refresh tokens upon successful verification.
+     */
+    @PostMapping(Endpoint.VERIFY_OTP)
+    public Mono<TokenPair> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
+        return authService.verifyOtp(request.getEmail(), request.getCode());
+    }
+
+    /**
+     * Handles requests to resend OTP during signup.
+     *
+     * <p>Accepts an email as a request parameter,
+     * generates a new OTP, saves it, and sends it to the user's email address.
+     *
+     * @param email the email address to which the OTP will be sent. Must be a valid email.
+     * @return 200 Accepted if the OTP is successfully generated and sent.
+     */
+    @GetMapping(Endpoint.SEND_OTP)
+    public Mono<Void> sendOtp(@RequestParam @Email String email) {
+        return authService.sendOtp(email);
+    }
+
+    @PostMapping(Endpoint.REFRESH_SESSION)
+    public Mono<TokenPair> refreshSession(@Valid @RequestBody TokenPair tokenPair) {
+        return authService.refreshSession(tokenPair);
+    }
+
+    @PostMapping(Endpoint.LOGOUT)
+    public Mono<Void> logout(@Valid @RequestBody TokenPair tokenPair) {
+        return authService.logout(tokenPair);
+    }
+
+    @PostMapping(Endpoint.FORGOT_PASSWORD)
+    public Mono<TokenPair> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return authService.forgotPassword(request);
+    }
 }

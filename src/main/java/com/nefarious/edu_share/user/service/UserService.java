@@ -69,15 +69,14 @@ public class UserService {
      * @param email Email of user
      * @param rawPassword Plaintext password of user
      */
-    public Mono<Void> updatePassword(String email, String rawPassword) {
+    public Mono<User> updatePassword(String email, String rawPassword) {
         return this.getByEmail(email)
             .flatMap(user -> encodePassword(rawPassword)
                 .map(hashed -> {
                     user.setPassword(hashed);
                     return user;
                 }))
-            .flatMap(userRepository::save)
-            .then();
+            .flatMap(userRepository::save);
     }
 
     /**

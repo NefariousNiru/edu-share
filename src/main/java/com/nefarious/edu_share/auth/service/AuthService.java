@@ -1,9 +1,6 @@
 package com.nefarious.edu_share.auth.service;
 
-import com.nefarious.edu_share.auth.dto.OtpVerificationRequest;
-import com.nefarious.edu_share.auth.dto.SigninRequest;
-import com.nefarious.edu_share.auth.dto.SignupRequest;
-import com.nefarious.edu_share.auth.dto.TokenPair;
+import com.nefarious.edu_share.auth.dto.*;
 import com.nefarious.edu_share.auth.security.JwtProvider;
 import com.nefarious.edu_share.auth.util.enums.AuthError;
 import com.nefarious.edu_share.auth.util.enums.TokenType;
@@ -83,6 +80,34 @@ public class AuthService {
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new BusinessException(AuthError.INVALID_OTP)))
                 .flatMap(valid -> userService.markEmailVerified(email))
+                .flatMap(user -> createSession(user.getId()));
+    }
+
+    public Mono<TokenPair> refreshSession(TokenPair tokenPair) {
+        return sessionService.validateRefreshToken(tokenPair.getRefreshToken())
+                .switchIfEmpty(Mono.error(new BusinessException(AuthError.INVALID_CREDENTIALS)))
+                .flatMap(userId ->
+                        sessionService.revokeSession(tokenPair.getRefreshToken(),TokenType.REFRESH)
+                                .then(sessionService.revokeSession(tokenPair.getAccessToken(),TokenType.ACCESS)
+                                        .thenReturn(userId)
+                                )
+                )
+                .flatMap(this::createSession);
+    }
+
+    public Mono<Void> logout(TokenPair tokenPair) {
+        return sessionService.revokeSession(tokenPair.getAccessToken(), TokenType.ACCESS)
+                .then(sessionService.revokeSession(tokenPair.getRefreshToken(), TokenType.REFRESH));
+    }
+
+    public Mono<TokenPair> forgotPassword(ForgotPasswordRequest request) {
+        return otpService.validateOtp(request.getEmail(), request.getCode())
+                .filter(Boolean::booleanValue)
+                .switchIfEmpty(Mono.error(new BusinessException(AuthError.INVALID_OTP)))
+                .flatMap(valid -> userService.updatePassword(request.getEmail(), request.getNewPassword()))
+                .flatMap(user -> sessionService.invalidateAllSessionsForUser(user.getId())
+                        .thenReturn(user)
+                )
                 .flatMap(user -> createSession(user.getId()));
     }
 
