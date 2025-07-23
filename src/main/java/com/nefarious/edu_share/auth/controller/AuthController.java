@@ -39,6 +39,7 @@ public class AuthController {
      * @param signinRequest {@link SigninRequest} containing email and password.
      * @return 200 OK with {@link TokenPair} containing tokens if authentication succeeds.
      */
+    @RateLimiter(key = "signin:#{#signinRequest.email}", property = "rate-limit.login-attempts")
     @PostMapping(Endpoint.SIGNIN)
     public Mono<TokenPair> signin(@Valid @RequestBody SigninRequest signinRequest) {
         return authService.signin(signinRequest);
@@ -54,6 +55,7 @@ public class AuthController {
      * @param request {@link OtpVerificationRequest} containing email and OTP code.
      * @return 200 OK with {@link TokenPair} containing access and refresh tokens upon successful verification.
      */
+    @RateLimiter(key = "otp:#{#request.email}", property = "rate-limit.refresh-attempts")
     @PostMapping(Endpoint.VERIFY_OTP)
     public Mono<TokenPair> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
         return authService.verifyOtp(request.getEmail(), request.getCode());
@@ -68,21 +70,52 @@ public class AuthController {
      * @param email the email address to which the OTP will be sent. Must be a valid email.
      * @return 200 Accepted if the OTP is successfully generated and sent.
      */
+    @RateLimiter(key = "otp:#{#email}", property = "rate-limit.otp-attempts")
     @GetMapping(Endpoint.SEND_OTP)
     public Mono<Void> sendOtp(@RequestParam @Email String email) {
         return authService.sendOtp(email);
     }
 
+    /**
+     * Handles session refresh requests.
+     *
+     * <p>Accepts a JSON payload containing a valid access and refresh token pair,
+     * validates the refresh token, revokes the old session, and issues a new access and refresh token pair.
+     *
+     * @param tokenPair the {@link TokenPair} containing the current access and refresh tokens.
+     * @return a {@link Mono} emitting a new {@link TokenPair} if the refresh is successful.
+     */
+    @RateLimiter(key = "refresh:#{#tokenPair.refreshToken}", property = "rate-limit.refresh-attempts")
     @PostMapping(Endpoint.REFRESH_SESSION)
     public Mono<TokenPair> refreshSession(@Valid @RequestBody TokenPair tokenPair) {
         return authService.refreshSession(tokenPair);
     }
 
+    /**
+     * Logs out the user by invalidating the provided access and refresh tokens.
+     *
+     * <p>Accepts a JSON payload with both tokens and removes the associated sessions
+     * from the session store, effectively logging the user out.
+     *
+     * @param tokenPair the {@link TokenPair} representing the session to invalidate.
+     * @return a {@link Mono<Void>} indicating completion of the logout process.
+     */
     @PostMapping(Endpoint.LOGOUT)
     public Mono<Void> logout(@Valid @RequestBody TokenPair tokenPair) {
         return authService.logout(tokenPair);
     }
 
+    /**
+     * Handles password reset requests after OTP verification.
+     *
+     * <p>Accepts a JSON payload with email, OTP code, and new password.
+     * If the OTP is valid, the user's password is updated, all sessions are invalidated,
+     * and a new session with fresh tokens is created.
+     *
+     * @param request the {@link ForgotPasswordRequest} containing the email, OTP, and new password.
+     * @return a {@link Mono} emitting a new {@link TokenPair} upon successful password reset.
+     */
+    @RateLimiter(key = "forgot-password:#{#request.email}", property = "rate-limit.refresh-attempts")
     @PostMapping(Endpoint.FORGOT_PASSWORD)
     public Mono<TokenPair> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return authService.forgotPassword(request);

@@ -26,11 +26,11 @@ public class UserService {
      * @param request {@link SignupRequest} the signup request containing user input data
      * @return Mono emitting the created User or error if validation fails
      */
-    public Mono<Void> createUser(SignupRequest request) {
+    public Mono<User> createUser(SignupRequest request) {
         return checkIfEmailOrUsernameTaken(request)
             .then(Mono.defer(() -> encodePassword(request.getPassword())))
             .map(encodedPwd -> buildUser(request, encodedPwd))
-            .flatMap(userRepository::save).then();
+            .flatMap(userRepository::save);
     }
 
     /**

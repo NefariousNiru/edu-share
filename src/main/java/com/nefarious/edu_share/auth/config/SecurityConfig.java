@@ -49,7 +49,7 @@ public class SecurityConfig {
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
         http.authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", Endpoint.AUTH + "**")
+                .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", Endpoint.AUTH + "/**")
                 .permitAll()
                 .anyExchange()
                 .authenticated()
