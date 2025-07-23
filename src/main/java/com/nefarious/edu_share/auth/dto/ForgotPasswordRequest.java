@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/** Request body class for a forgot password verify request. Inherites OtpVerificationRequest as password can be updated when Otp is verified*/
+/** Request body class for a forgot password verify request. Inherits OtpVerificationRequest as password can be updated when Otp is verified*/
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ForgotPasswordRequest extends OtpVerificationRequest {
