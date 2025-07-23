@@ -4,8 +4,9 @@ import com.nefarious.edu_share.auth.dto.*;
 import com.nefarious.edu_share.auth.service.AuthService;
 import com.nefarious.edu_share.auth.util.Endpoint;
 import com.nefarious.edu_share.shared.annotation.RateLimiter;
+import com.nefarious.edu_share.shared.utils.RedisKeyConstants;
+import com.nefarious.edu_share.shared.utils.Validators;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -39,7 +40,7 @@ public class AuthController {
      * @param signinRequest {@link SigninRequest} containing email and password.
      * @return 200 OK with {@link TokenPair} containing tokens if authentication succeeds.
      */
-    @RateLimiter(key = "signin:#{#signinRequest.email}", property = "rate-limit.login-attempts")
+    @RateLimiter(key = RedisKeyConstants.SIGNIN + ":#{#signinRequest.email}", property = "rate-limit.login-attempts")
     @PostMapping(Endpoint.SIGNIN)
     public Mono<TokenPair> signin(@Valid @RequestBody SigninRequest signinRequest) {
         return authService.signin(signinRequest);
@@ -55,7 +56,7 @@ public class AuthController {
      * @param request {@link OtpVerificationRequest} containing email and OTP code.
      * @return 200 OK with {@link TokenPair} containing access and refresh tokens upon successful verification.
      */
-    @RateLimiter(key = "otp:#{#request.email}", property = "rate-limit.refresh-attempts")
+    @RateLimiter(key = RedisKeyConstants.OTP_VERIFY + ":#{#request.email}", property = "rate-limit.otp-verify-attempts")
     @PostMapping(Endpoint.VERIFY_OTP)
     public Mono<TokenPair> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
         return authService.verifyOtp(request.getEmail(), request.getCode());
@@ -70,9 +71,10 @@ public class AuthController {
      * @param email the email address to which the OTP will be sent. Must be a valid email.
      * @return 200 Accepted if the OTP is successfully generated and sent.
      */
-    @RateLimiter(key = "otp:#{#email}", property = "rate-limit.otp-attempts")
+    @RateLimiter(key = RedisKeyConstants.OTP + ":#{#email}", property = "rate-limit.otp-attempts")
     @GetMapping(Endpoint.SEND_OTP)
-    public Mono<Void> sendOtp(@RequestParam @Email String email) {
+    public Mono<Void> sendOtp(@RequestParam String email) {
+        Validators.assertValidEmail(email, "sendOtp");
         return authService.sendOtp(email);
     }
 
@@ -85,7 +87,7 @@ public class AuthController {
      * @param tokenPair the {@link TokenPair} containing the current access and refresh tokens.
      * @return a {@link Mono} emitting a new {@link TokenPair} if the refresh is successful.
      */
-    @RateLimiter(key = "refresh:#{#tokenPair.refreshToken}", property = "rate-limit.refresh-attempts")
+    @RateLimiter(key = RedisKeyConstants.REFRESH_TOKEN + ":#{#tokenPair.refreshToken}", property = "rate-limit.refresh-attempts")
     @PostMapping(Endpoint.REFRESH_SESSION)
     public Mono<TokenPair> refreshSession(@Valid @RequestBody TokenPair tokenPair) {
         return authService.refreshSession(tokenPair);
@@ -115,7 +117,7 @@ public class AuthController {
      * @param request the {@link ForgotPasswordRequest} containing the email, OTP, and new password.
      * @return a {@link Mono} emitting a new {@link TokenPair} upon successful password reset.
      */
-    @RateLimiter(key = "forgot-password:#{#request.email}", property = "rate-limit.refresh-attempts")
+    @RateLimiter(key = RedisKeyConstants.FORGOT_PASSWORD + "forgot-password:#{#request.email}", property = "rate-limit.forgot-password-attempts")
     @PostMapping(Endpoint.FORGOT_PASSWORD)
     public Mono<TokenPair> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return authService.forgotPassword(request);

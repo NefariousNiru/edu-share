@@ -1,12 +1,12 @@
 package com.nefarious.edu_share.auth.service;
 
 import com.nefarious.edu_share.shared.utils.Constants;
+import com.nefarious.edu_share.shared.utils.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
 import java.security.SecureRandom;
 import java.time.Duration;
 
@@ -73,6 +73,6 @@ public class OtpService {
 
     /** Helper to build the Redis key for a given email. */
     private String buildKey(String email) {
-        return "otp:" + email;
+        return RedisKeyConstants.OTP + ":" + email;
     }
 }

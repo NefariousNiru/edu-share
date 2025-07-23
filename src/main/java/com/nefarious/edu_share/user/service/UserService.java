@@ -40,6 +40,7 @@ public class UserService {
      */
     public Mono<User> authenticate(SigninRequest request) {
         return getByEmail(request.getEmail())
+            .switchIfEmpty(Mono.error(new BusinessException(AuthError.INVALID_CREDENTIALS)))
             .flatMap(user -> {
                 if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                     return Mono.error(new BusinessException(AuthError.INVALID_CREDENTIALS));
@@ -47,7 +48,7 @@ public class UserService {
                 if (!user.isEmailVerified()) {
                     return Mono.error(new BusinessException(AuthError.EMAIL_NOT_VERIFIED));
                 }
-                return Mono.empty();
+                return Mono.just(user);
             });
     }
 

@@ -2,6 +2,7 @@ package com.nefarious.edu_share.auth.service;
 
 import com.nefarious.edu_share.auth.security.JwtProvider;
 import com.nefarious.edu_share.auth.util.enums.TokenType;
+import com.nefarious.edu_share.shared.utils.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -25,14 +26,14 @@ public class SessionService {
 
     /** Store a session token in Redis (reactive). */
     public Mono<Void> createSession(String token, UUID userId, TokenType tokenType) {
-        String key = tokenType.getValue() + ":" + token;
+        String key = tokenType.getValue() + ":" + token;     // tokenType.getValue() resolves to 'access' or 'refresh' redis keys
         long ttl = tokenType == TokenType.ACCESS ? accessExpirationMs : refreshExpirationMs;
 
         Mono<Boolean> storeToken = redis
                 .opsForValue()
                 .set(key, userId.toString(), Duration.ofMillis(ttl));
 
-        String userSessionKey = "user-sessions:" + userId;          // For reverse lookups
+        String userSessionKey = RedisKeyConstants.USER_SESSIONS + ":" + userId;          // For reverse lookups
         Mono<Long> pushToList = redis
                 .opsForList()
                 .rightPush(userSessionKey, key);
@@ -52,7 +53,7 @@ public class SessionService {
 
     /** Invalidate all sessions for a user. */
     public Mono<Void> invalidateAllSessionsForUser(UUID userId) {
-        String userSessionKey = "user-sessions:" + userId;
+        String userSessionKey = RedisKeyConstants.USER_SESSIONS + ":" + userId;
         return redis
                 .opsForList()
                 .range(userSessionKey, 0, -1)

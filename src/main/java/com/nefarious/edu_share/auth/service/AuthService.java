@@ -6,7 +6,8 @@ import com.nefarious.edu_share.auth.util.enums.AuthError;
 import com.nefarious.edu_share.auth.util.enums.TokenType;
 import com.nefarious.edu_share.shared.exceptions.BusinessException;
 import com.nefarious.edu_share.shared.interfaces.EmailService;
-import com.nefarious.edu_share.user.entity.User;
+import com.nefarious.edu_share.shared.service.RateLimiterService;
+import com.nefarious.edu_share.shared.utils.RedisKeyConstants;
 import com.nefarious.edu_share.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class AuthService {
     private final EmailService emailService;
     private final JwtProvider jwtProvider;
     private final SessionService sessionService;
+    private final RateLimiterService rateLimiterService;
 
     /**
      * Handles the user signup process.
@@ -59,7 +61,11 @@ public class AuthService {
      */
     public Mono<TokenPair> signin(SigninRequest request) {
         return userService.authenticate(request)
-            .flatMap(user -> this.createSession(user.getId()));
+                .flatMap(user -> createSession(user.getId()))
+                .flatMap(tokenPair ->
+                        rateLimiterService.reset(RedisKeyConstants.SIGNIN + ":" + request.getEmail())
+                                .thenReturn(tokenPair)
+                );
     }
 
     /**
@@ -92,7 +98,11 @@ public class AuthService {
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new BusinessException(AuthError.INVALID_OTP)))
                 .flatMap(valid -> userService.markEmailVerified(email))
-                .flatMap(user -> createSession(user.getId()));
+                .flatMap(user -> createSession(user.getId()))
+                .flatMap(tokenPair ->
+                        rateLimiterService.reset(RedisKeyConstants.OTP + ":" + email)
+                                .thenReturn(tokenPair)
+                );
     }
 
     /**
@@ -152,7 +162,11 @@ public class AuthService {
                 .flatMap(user -> sessionService.invalidateAllSessionsForUser(user.getId())
                         .thenReturn(user)
                 )
-                .flatMap(user -> createSession(user.getId()));
+                .flatMap(user -> createSession(user.getId()))
+                .flatMap(tokenPair ->
+                        rateLimiterService.reset(RedisKeyConstants.FORGOT_PASSWORD + ":" + request.getEmail())
+                                .thenReturn(tokenPair)
+                );
     }
 
     /**
