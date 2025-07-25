@@ -22,16 +22,16 @@ public class FollowController {
      * Follow the given username.
      */
     @PostMapping(FollowEndpoint.USERNAME)
-    public Mono<Void> follow(@AuthenticationPrincipal UUID userId, @PathVariable String usernameToFollow) {
-        return followService.follow(userId, usernameToFollow);
+    public Mono<Void> follow(@AuthenticationPrincipal UUID userId, @PathVariable String username) {
+        return followService.follow(userId, username);
     }
 
     /**
      * Unfollow the given username.
      */
     @DeleteMapping(FollowEndpoint.USERNAME)
-    public Mono<Void> unfollow(@AuthenticationPrincipal UUID userId, @PathVariable String usernameToFollow) {
-        return followService.unfollow(userId, usernameToFollow);
+    public Mono<Void> unfollow(@AuthenticationPrincipal UUID userId, @PathVariable String username) {
+        return followService.unfollow(userId, username);
     }
 
     /**
@@ -50,7 +50,7 @@ public class FollowController {
      * List users the given username is following, paged.
      * GET /follows/{username}/following?page=0&size=20
      */
-    @GetMapping(FollowEndpoint.FOLLOWERS)
+    @GetMapping(FollowEndpoint.FOLLOWING)
     public Flux<FollowListItem> getFollowing(@PathVariable String username,
                                              @RequestParam(defaultValue = "0") int page,
                                              @RequestParam(defaultValue = "20") int size) {

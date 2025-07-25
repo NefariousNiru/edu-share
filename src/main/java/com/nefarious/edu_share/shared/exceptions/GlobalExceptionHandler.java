@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BusinessErrorResponse> handleAll(Exception ex) {
         log.error(Arrays.toString(ex.getStackTrace()));
-
+        log.error(ex.getMessage());
         HttpStatusCode status = HttpStatus.INTERNAL_SERVER_ERROR;
         String message = BaseError.INTERNAL_SERVER_ERROR.getMessage();
         BaseError error = BaseError.INTERNAL_SERVER_ERROR;

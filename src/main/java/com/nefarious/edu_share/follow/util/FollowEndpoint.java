@@ -5,5 +5,4 @@ public class FollowEndpoint {
     public static final String USERNAME = "/{username}";
     public static final String FOLLOWERS = USERNAME + "/followers";
     public static final String FOLLOWING = USERNAME + "/following";
-
 }

@@ -5,11 +5,13 @@ import com.nefarious.edu_share.auth.service.SessionService;
 import com.nefarious.edu_share.auth.util.AuthEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
 @Configuration
@@ -48,6 +50,7 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, AuthTokenBearer authTokenBearer) {
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
+        http.exceptionHandling(ex ->ex.authenticationEntryPoint(unauthorizedEntryPoint()));
         http.authorizeExchange(exchanges -> exchanges
                 .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", AuthEndpoint.AUTH + "/**")
                 .permitAll()
@@ -58,5 +61,13 @@ public class SecurityConfig {
         http.httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);
         http.formLogin(ServerHttpSecurity.FormLoginSpec::disable);
         return http.build();
+    }
+
+    @Bean
+    ServerAuthenticationEntryPoint unauthorizedEntryPoint() {
+        return (exchange, ex) -> {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        };
     }
 }

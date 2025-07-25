@@ -3,6 +3,9 @@ package com.nefarious.edu_share.follow.service;
 import com.nefarious.edu_share.follow.dto.FollowListItem;
 import com.nefarious.edu_share.follow.entity.Follow;
 import com.nefarious.edu_share.follow.repository.FollowRepository;
+import com.nefarious.edu_share.follow.util.enums.FollowError;
+import com.nefarious.edu_share.shared.exceptions.BaseError;
+import com.nefarious.edu_share.shared.exceptions.BusinessException;
 import com.nefarious.edu_share.user.entity.User;
 import com.nefarious.edu_share.user.service.UserService;
 import lombok.AllArgsConstructor;
@@ -25,6 +28,11 @@ public class FollowService {
     public Mono<Void> follow(UUID userId, String usernameToFollow) {
         return userService.getByUsername(usernameToFollow)
                 .flatMap(userToFollow -> {
+                    if (userId.equals(userToFollow.getId()))
+                        throw new BusinessException(FollowError.CANNOT_FOLLOW_SELF);
+//                    followRepository.existsByFollowerIdAndFolloweeId(userId, userToFollow.getId()).boole
+//                    also check if user is already following.
+
                     Follow follow = new Follow(null, userId, userToFollow.getId());
                     return followRepository.save(follow).then();
                 });

@@ -3,6 +3,7 @@ package com.nefarious.edu_share.auth.security;
 import com.nefarious.edu_share.auth.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.server.ServerWebExchange;
@@ -26,17 +27,17 @@ public class AuthTokenBearer implements WebFilter {
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
         if (header == null || !header.startsWith("Bearer ")) {
-            return chain.filter(exchange);
+            return Mono.error(new BadCredentialsException("No Bearer Token"));
         }
 
         String token = header.substring(7);
         return sessionService.validateAccessToken(token)
+                .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid token")))
                 .flatMap(userId -> {
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(userId, token, List.of());
                     return chain.filter(exchange)
                             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
-                })
-                .switchIfEmpty(chain.filter(exchange));
+                });
     }
 }
