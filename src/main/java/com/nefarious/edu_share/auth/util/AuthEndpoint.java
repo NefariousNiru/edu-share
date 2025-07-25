@@ -1,6 +1,6 @@
 package com.nefarious.edu_share.auth.util;
 
-public class Endpoint {
+public class AuthEndpoint {
     public static final String AUTH                      = "/auth";
     public static final String SIGNUP                    = "/signup";
     public static final String SIGNIN                    = "/signin";

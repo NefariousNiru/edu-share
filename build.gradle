@@ -38,9 +38,11 @@ dependencies {
 //	TODO Upgrade webflux-ui
 	implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.9'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
+	implementation 'org.mapstruct:mapstruct:1.6.3'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'io.projectreactor:reactor-test'
 	testImplementation 'org.springframework.security:spring-security-test'

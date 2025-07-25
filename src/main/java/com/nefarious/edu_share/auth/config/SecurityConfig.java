@@ -2,7 +2,7 @@ package com.nefarious.edu_share.auth.config;
 
 import com.nefarious.edu_share.auth.security.AuthTokenBearer;
 import com.nefarious.edu_share.auth.service.SessionService;
-import com.nefarious.edu_share.auth.util.Endpoint;
+import com.nefarious.edu_share.auth.util.AuthEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
@@ -49,7 +49,7 @@ public class SecurityConfig {
         http.csrf(ServerHttpSecurity.CsrfSpec::disable);
         http.securityContextRepository(NoOpServerSecurityContextRepository.getInstance());
         http.authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", Endpoint.AUTH + "/**")
+                .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", AuthEndpoint.AUTH + "/**")
                 .permitAll()
                 .anyExchange()
                 .authenticated()

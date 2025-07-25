@@ -4,12 +4,14 @@ import com.nefarious.edu_share.shared.dto.BusinessErrorResponse;
 import com.nefarious.edu_share.shared.interfaces.BusinessError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 
 import java.util.Arrays;
@@ -53,13 +55,28 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<BusinessErrorResponse> handleAll(Exception ex) {
         log.error(Arrays.toString(ex.getStackTrace()));
+
+        HttpStatusCode status = HttpStatus.INTERNAL_SERVER_ERROR;
+        String message = BaseError.INTERNAL_SERVER_ERROR.getMessage();
+        BaseError error = BaseError.INTERNAL_SERVER_ERROR;
+
+        if (ex instanceof ResponseStatusException rse) {
+            status = rse.getStatusCode();
+            message = rse.getReason() != null
+                    ? rse.getReason()
+                    : status.value() + " " + status;
+
+            if (status.value() == HttpStatus.NOT_FOUND.value()) {
+                error = BaseError.NOT_FOUND;
+            } else if (status.value() == HttpStatus.BAD_REQUEST.value()) {
+                error = BaseError.VALIDATION_FAILED;
+            }
+        }
+
         BusinessErrorResponse body = new BusinessErrorResponse(
-                BaseError.INTERNAL_SERVER_ERROR,
-                BaseError.INTERNAL_SERVER_ERROR.getMessage(),
-                System.currentTimeMillis()
+                error, message, System.currentTimeMillis()
         );
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(body);
+
+        return ResponseEntity.status(status).body(body);
     }
 }

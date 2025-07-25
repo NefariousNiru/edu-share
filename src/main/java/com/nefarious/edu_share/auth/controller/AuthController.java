@@ -2,7 +2,7 @@ package com.nefarious.edu_share.auth.controller;
 
 import com.nefarious.edu_share.auth.dto.*;
 import com.nefarious.edu_share.auth.service.AuthService;
-import com.nefarious.edu_share.auth.util.Endpoint;
+import com.nefarious.edu_share.auth.util.AuthEndpoint;
 import com.nefarious.edu_share.shared.annotation.RateLimiter;
 import com.nefarious.edu_share.shared.utils.RedisKeyConstants;
 import com.nefarious.edu_share.shared.utils.Validators;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping(Endpoint.AUTH)
+@RequestMapping(AuthEndpoint.AUTH)
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
@@ -26,7 +26,7 @@ public class AuthController {
      * @param signupRequest {@link SignupRequest} the signup request data containing email, password, username, etc.
      * @return 202 Accepted if signup request is successfully processed
      */
-    @PostMapping(Endpoint.SIGNUP)
+    @PostMapping(AuthEndpoint.SIGNUP)
     public Mono<Void> signup(@Valid @RequestBody SignupRequest signupRequest) {
         return authService.signup(signupRequest);
     }
@@ -41,7 +41,7 @@ public class AuthController {
      * @return 200 OK with {@link TokenPair} containing tokens if authentication succeeds.
      */
     @RateLimiter(key = RedisKeyConstants.SIGNIN + ":#{#signinRequest.email}", property = "rate-limit.login-attempts")
-    @PostMapping(Endpoint.SIGNIN)
+    @PostMapping(AuthEndpoint.SIGNIN)
     public Mono<TokenPair> signin(@Valid @RequestBody SigninRequest signinRequest) {
         return authService.signin(signinRequest);
     }
@@ -57,7 +57,7 @@ public class AuthController {
      * @return 200 OK with {@link TokenPair} containing access and refresh tokens upon successful verification.
      */
     @RateLimiter(key = RedisKeyConstants.OTP_VERIFY + ":#{#request.email}", property = "rate-limit.otp-verify-attempts")
-    @PostMapping(Endpoint.VERIFY_OTP)
+    @PostMapping(AuthEndpoint.VERIFY_OTP)
     public Mono<TokenPair> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
         return authService.verifyOtp(request.getEmail(), request.getCode());
     }
@@ -72,7 +72,7 @@ public class AuthController {
      * @return 200 Accepted if the OTP is successfully generated and sent.
      */
     @RateLimiter(key = RedisKeyConstants.OTP + ":#{#email}", property = "rate-limit.otp-attempts")
-    @GetMapping(Endpoint.SEND_OTP)
+    @GetMapping(AuthEndpoint.SEND_OTP)
     public Mono<Void> sendOtp(@RequestParam String email) {
         Validators.assertValidEmail(email, "sendOtp");
         return authService.sendOtp(email);
@@ -88,7 +88,7 @@ public class AuthController {
      * @return a {@link Mono} emitting a new {@link TokenPair} if the refresh is successful.
      */
     @RateLimiter(key = RedisKeyConstants.REFRESH_TOKEN + ":#{#tokenPair.refreshToken}", property = "rate-limit.refresh-attempts")
-    @PostMapping(Endpoint.REFRESH_SESSION)
+    @PostMapping(AuthEndpoint.REFRESH_SESSION)
     public Mono<TokenPair> refreshSession(@Valid @RequestBody TokenPair tokenPair) {
         return authService.refreshSession(tokenPair);
     }
@@ -102,7 +102,7 @@ public class AuthController {
      * @param tokenPair the {@link TokenPair} representing the session to invalidate.
      * @return a {@link Mono<Void>} indicating completion of the logout process.
      */
-    @PostMapping(Endpoint.LOGOUT)
+    @PostMapping(AuthEndpoint.LOGOUT)
     public Mono<Void> logout(@Valid @RequestBody TokenPair tokenPair) {
         return authService.logout(tokenPair);
     }
@@ -118,7 +118,7 @@ public class AuthController {
      * @return a {@link Mono} emitting a new {@link TokenPair} upon successful password reset.
      */
     @RateLimiter(key = RedisKeyConstants.FORGOT_PASSWORD + "forgot-password:#{#request.email}", property = "rate-limit.forgot-password-attempts")
-    @PostMapping(Endpoint.FORGOT_PASSWORD)
+    @PostMapping(AuthEndpoint.FORGOT_PASSWORD)
     public Mono<TokenPair> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return authService.forgotPassword(request);
     }

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -80,15 +82,27 @@ public class UserService {
             .flatMap(userRepository::save);
     }
 
+    /** Get a {@link User} by their username */
+    public Mono<User> getByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .switchIfEmpty(Mono.error(new BusinessException(AuthError.USER_NOT_EXISTS)));
+    }
+
+    /** Get a {@link User} by their username */
+    public Mono<User> getById(UUID userId) {
+        return userRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new BusinessException(AuthError.USER_NOT_EXISTS)));
+    }
+
     /**
      * Retrieves a user by email.
      * <p>Throws {@link BusinessException} if no user is found with the given email.
      * @param email the email address to search for.
      * @return Mono {@link User} entity matching the provided email.
      */
-    public Mono<User> getByEmail(String email) {
+    private Mono<User> getByEmail(String email) {
         return userRepository.findByEmail(email)
-            .switchIfEmpty(Mono.error(new BusinessException(AuthError.USER_NOT_EXISTS)));
+                .switchIfEmpty(Mono.error(new BusinessException(AuthError.USER_NOT_EXISTS)));
     }
 
     /**
