@@ -19,6 +19,7 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 public class AuthTokenBearer implements WebFilter {
+    private static final String BEARER_PREFIX = "Bearer ";
     private final SessionService sessionService;
 
     @Override
@@ -26,16 +27,22 @@ public class AuthTokenBearer implements WebFilter {
         String header = exchange.getRequest()
                 .getHeaders()
                 .getFirst(HttpHeaders.AUTHORIZATION);
-        if (header == null || !header.startsWith("Bearer ")) {
-            return Mono.error(new BadCredentialsException("No Bearer Token"));
+
+        // No header (or not Bearer) - do not authenticate, just continue.
+        // Public routes will work; protected routes will fail later at `.authenticated()`.
+        if (header == null || !header.startsWith(BEARER_PREFIX)) {
+            return chain.filter(exchange);
         }
 
-        String token = header.substring(7);
+        String token = header.substring(BEARER_PREFIX.length()).trim();
+        if (token.isEmpty()) {
+            return Mono.error(new BadCredentialsException("Empty Bearer token"));
+        }
+
         return sessionService.validateAccessToken(token)
                 .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid token")))
                 .flatMap(userId -> {
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(userId, token, List.of());
+                    var auth = new UsernamePasswordAuthenticationToken(userId, null, List.of());
                     return chain.filter(exchange)
                             .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
                 });
