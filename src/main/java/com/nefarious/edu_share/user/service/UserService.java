@@ -10,9 +10,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -93,6 +95,13 @@ public class UserService {
         return userRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new BusinessException(AuthError.USER_NOT_EXISTS)));
     }
+
+    /** Get a list of {@link User} by their usernames */
+    public Flux<User> getByIds(List<UUID> ids) {
+        if (ids.isEmpty()) return Flux.empty();
+        return userRepository.findAllByIdIn(ids.toArray(new UUID[0]));
+    }
+
 
     /**
      * Retrieves a user by email.
